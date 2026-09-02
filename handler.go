@@ -87,7 +87,7 @@ func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
 	gridResponse(w, grid)
 }
 
-func (h *Handler) getDvLogsData(gp GridParams) (Grid, error) {
+func (h *Handler) getDvLogsData(gp GridParams) (*Grid, error) {
 	return DvLogDefinition.Grid(h.db, gp)
 }
 
@@ -134,7 +134,7 @@ func (h *Handler) render(w http.ResponseWriter, templateName string, data any) {
 	}
 }
 
-func gridResponse(w http.ResponseWriter, grid Grid) {
+func gridResponse(w http.ResponseWriter, grid *Grid) {
 	err := tmpls.ExecuteTemplate(w, "datagrid-rows", grid)
 
 	if err != nil {

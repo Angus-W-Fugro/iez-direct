@@ -37,6 +37,10 @@ type Grid struct {
 	Rows    []Row
 }
 
+func (g *Grid) NumColumns() int {
+	return len(g.Columns) + 1 // Include the # column
+}
+
 type Column struct {
 	Name     string
 	Editable bool
@@ -48,21 +52,21 @@ type Row struct {
 	Cells  []any
 }
 
-func (e *EntityDefinition) Grid(db *sql.DB, gp GridParams) (Grid, error) {
-	query := DvLogDefinition.SelectQuery(gp)
+func (e *EntityDefinition) Grid(db *sql.DB, gp GridParams) (*Grid, error) {
+	query := e.SelectQuery(gp)
 
 	rows, err := db.Query(query)
 
 	if err != nil {
-		return Grid{}, err
+		return nil, err
 	}
 
 	defer rows.Close()
 
-	allRows, err := scanRows(rows, len(DvLogDefinition.Columns)+1)
+	allRows, err := scanRows(rows, len(e.Columns)+1)
 
 	if err != nil {
-		return Grid{}, err
+		return nil, err
 	}
 
 	startNumber := ((gp.Page - 1) * gp.NumRows) + 1
@@ -89,7 +93,11 @@ func (e *EntityDefinition) SelectQuery(gp GridParams) string {
 }
 
 func (e *EntityDefinition) UpdateCell(db *sql.DB, rowID []byte, colName string, value string) error {
-	column, _ := stf.First(e.Columns, func(c Column) bool { return c.Name == colName })
+	column, ok := stf.First(e.Columns, func(c Column) bool { return c.Name == colName })
+
+	if !ok {
+		return fmt.Errorf("cannot edit %q: column not in definition", colName)
+	}
 
 	query := fmt.Sprintf("UPDATE %s SET %s = ? WHERE %s = ?", e.TableName, column.Name, e.IDColumn)
 
@@ -98,8 +106,8 @@ func (e *EntityDefinition) UpdateCell(db *sql.DB, rowID []byte, colName string, 
 	return err
 }
 
-func (e *EntityDefinition) ToGrid(startNumber int, rows [][]any) Grid {
-	g := Grid{}
+func (e *EntityDefinition) ToGrid(startNumber int, rows [][]any) *Grid {
+	g := &Grid{}
 	g.Columns = e.Columns
 
 	for i, row := range rows {

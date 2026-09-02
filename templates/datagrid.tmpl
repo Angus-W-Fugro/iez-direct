@@ -35,6 +35,12 @@
     </thead>
 
     <tbody>
+        {{if not .Rows}}
+        <tr>
+            <td colspan="{{.NumColumns}}">No rows returned</td>
+        </tr>
+        {{end}}
+
         {{range .Rows}}
         {{$row := .}}
         <tr>
