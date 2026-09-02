@@ -52,8 +52,9 @@ type Column struct {
 }
 
 type Row struct {
-	ID    string
-	Cells []any
+	ID     string
+	Number int
+	Cells  []any
 }
 
 func (e *EntityDefinition) Grid(db *sql.DB, gp GridParams) (Grid, error) {
@@ -73,7 +74,9 @@ func (e *EntityDefinition) Grid(db *sql.DB, gp GridParams) (Grid, error) {
 		return Grid{}, err
 	}
 
-	return e.ToGrid(allRows), nil
+	startNumber := ((gp.Page - 1) * gp.NumRows) + 1
+
+	return e.ToGrid(startNumber, allRows), nil
 }
 
 func (e *EntityDefinition) SelectQuery(gp GridParams) string {
@@ -98,18 +101,19 @@ func (e *EntityDefinition) UpdateCell(db *sql.DB, rowID []byte, columnLabel stri
 	return err
 }
 
-func (e *EntityDefinition) ToGrid(rows [][]any) Grid {
+func (e *EntityDefinition) ToGrid(startNumber int, rows [][]any) Grid {
 	g := Grid{}
 	g.Columns = make([]Column, len(e.Columns))
 	for i, c := range e.Columns {
 		g.Columns[i] = Column{Name: c.Label, Editable: c.Editable}
 	}
 
-	for _, row := range rows {
+	for i, row := range rows {
 		id := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%v", row[0])))
 		g.Rows = append(g.Rows, Row{
-			ID:    id,
-			Cells: row[1:],
+			Number: startNumber + i,
+			ID:     id,
+			Cells:  row[1:],
 		})
 	}
 

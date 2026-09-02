@@ -20,6 +20,7 @@
 <table id="datagrid-rows">
     <thead>
         <tr>
+            <th>#</th>
             {{range .Columns}}
             <th>
                 {{ .Name }}
@@ -32,14 +33,16 @@
         {{range .Rows}}
         {{$row := .}}
         <tr>
+            <td>{{.Number}}</td>
+
             {{range $i, $cell := .Cells}}
             {{$col := index $.Columns $i}}
             {{if $col.Editable}}
             <td>
-                <form hx-patch="/api/dv-log/edit" hx-encoding="json" hx-target="next .result">
+                <form class="row" hx-patch="/api/dv-log/edit" hx-encoding="json" hx-target="next .result">
                     <input name="rowid" type="hidden" value="{{$row.ID}}">
                     <input name="column" type="hidden" value="{{$col.Name}}">
-                    <textarea name="value">{{$cell}}</textarea>
+                    <textarea cols="40" name="value">{{$cell}}</textarea>
                     <button>
                         Save
                     </button>
