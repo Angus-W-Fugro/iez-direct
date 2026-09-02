@@ -88,7 +88,13 @@ func (e *EntityDefinition) SelectQuery(gp GridParams) string {
 	for _, c := range e.Columns {
 		cols = append(cols, c.Name)
 	}
-	return fmt.Sprintf("SELECT %s FROM %s LIMIT %d OFFSET %d", strings.Join(cols, ", "), e.TableName, limit, offset)
+
+	filter := ""
+	if gp.Filter != nil {
+		filter = "WHERE " + *gp.Filter
+	}
+
+	return fmt.Sprintf("SELECT %s FROM %s %v LIMIT %d OFFSET %d", strings.Join(cols, ", "), e.TableName, filter, limit, offset)
 }
 
 func (e *EntityDefinition) UpdateCell(db *sql.DB, rowID []byte, columnLabel string, value string) error {

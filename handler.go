@@ -73,14 +73,14 @@ func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
 	gp, err := parserequest.As[GridParams](r)
 
 	if err != nil {
-		htmlResponse(w, "<span id='response'>"+err.Error()+"</span>")
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	grid, err := h.getDvLogsData(gp)
 
 	if err != nil {
-		htmlResponse(w, "<span id='response'>"+err.Error()+"</span>")
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
