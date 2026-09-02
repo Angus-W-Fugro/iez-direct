@@ -58,6 +58,7 @@ type DatagridInit struct {
 type GridParams struct {
 	NumRows int
 	Page    int
+	Filter  *string
 }
 
 func (h *Handler) DvLogsPage(w http.ResponseWriter, r *http.Request) {

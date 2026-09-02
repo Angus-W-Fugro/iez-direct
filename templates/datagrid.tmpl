@@ -1,6 +1,6 @@
 {{define "datagrid"}}
 <div class="row">
-    <form class="row" hx-get="{{ .Endpoint }}" hx-target="#datagrid-rows" hx-select="#datagrid-rows" hx-trigger="load, change">
+    <form class="row" hx-get="{{.Endpoint}}" hx-target="#datagrid-rows" hx-select="#datagrid-rows" hx-trigger="load, change delay:200ms">
         <label>
             Rows
             <input name="numrows" type="number" value="10" min="10" max="500" required>
@@ -9,6 +9,11 @@
         <label>
             Page
             <input name="page" type="number" value="1" required min="1">
+        </label>
+
+        <label>
+            Filter
+            <input name="filter">
         </label>
     </form>
 </div>
