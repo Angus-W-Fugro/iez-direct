@@ -7,16 +7,30 @@
                 {{ .Name }}
             </th>
             {{end}}
+
+            <th>
+                <!-- Controls -->
+            </th>
         </tr>
     </thead>
 
     <tbody>
         {{range .Rows}}
-        <tr>
-            {{range .Cells}}
-                <td>{{ . }}</td>
-            {{end}}
-        </tr>
+        <form>
+            <tr>
+                {{range $i, $cell := .Cells}}
+                    {{$col := index $.Columns $i}}
+                    {{if $col.Editable}}
+                    <td>
+                        <textarea name="{{$col.Name}}">{{$cell}}</textarea>
+                        <button>Save</button>
+                    </td>
+                    {{else}}
+                    <td>{{$cell}}</td>
+                    {{end}}
+                {{end}}
+            </tr>
+        </form>
         {{end}}
     </tbody>
 </table>

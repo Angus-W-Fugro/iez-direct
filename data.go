@@ -15,7 +15,8 @@ type Grid struct {
 }
 
 type Column struct {
-	Name string
+	Name     string
+	Editable bool
 }
 
 type Row struct {
@@ -35,7 +36,8 @@ func DvLogsToGrid(logs []DvLog) Grid {
 			Name: "VideoDate",
 		},
 		{
-			Name: "Comment",
+			Name:     "Comment",
+			Editable: true,
 		},
 	}
 

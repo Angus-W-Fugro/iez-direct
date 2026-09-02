@@ -68,7 +68,7 @@ func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getDvLogsData() ([]DvLog, error) {
 	rows := []DvLog{}
 
-	err := h.db.Table("surf_dv_logs").Limit(10).Find(&rows).Error
+	err := h.db.Table("surf_dv_logs").Limit(20).Find(&rows).Error
 
 	if err != nil {
 		return nil, err
