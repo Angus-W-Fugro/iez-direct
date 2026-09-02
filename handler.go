@@ -16,6 +16,7 @@ type Handler struct {
 
 func NewHandler() (*Handler, error) {
 	dsn := os.Getenv("MYSQL_CONN")
+	dsn = dsn + "?parseTime=true"
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
@@ -48,6 +49,30 @@ func htmlResponse(w http.ResponseWriter, text string) {
 
 func (h *Handler) DvLogsPage(w http.ResponseWriter, r *http.Request) {
 	h.render(w, "dv-logs.tmpl", nil)
+}
+
+func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
+	data, err := h.getDvLogsData()
+
+	if err != nil {
+		htmlResponse(w, "<span id='response'>"+err.Error()+"</span>")
+		return
+	}
+
+	_ = data
+	htmlResponse(w, "<table id='dv-table'>ok</span>")
+}
+
+func (h *Handler) getDvLogsData() ([]DvLog, error) {
+	rows := []DvLog{}
+
+	err := h.db.Table("surf_dv_logs").Limit(10).Find(rows).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return rows, nil
 }
 
 //go:embed all:templates

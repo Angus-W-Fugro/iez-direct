@@ -32,6 +32,7 @@ func startServer() error {
 		OnPort("7588").
 		ServeStatic(staticFiles).
 		Route("/dv-logs", h.DvLogsPage).
+		Route("/api/dv-logs", h.DvLogsData).
 		Route("/api/ping", h.Ping)
 
 	return c.Serve()
