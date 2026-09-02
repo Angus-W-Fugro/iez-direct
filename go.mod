@@ -4,6 +4,7 @@ go 1.26.4
 
 require (
 	github.com/Angus-Warman/httpmin v0.0.11
+	github.com/Angus-Warman/stf v0.0.2
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/stretchr/testify v1.12.1
 )

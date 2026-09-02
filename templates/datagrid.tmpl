@@ -18,7 +18,7 @@
                 {{$col := index $.Columns $i}}
                 {{if $col.Editable}}
                 <td>
-                    <form hx-patch="/api/dv-log/edit" hx-encoding="json">
+                    <form hx-patch="/api/dv-log/edit" hx-encoding="json" hx-target="next .result">
                         <input name="rowid" type="hidden" value="{{$row.ID}}">
                         <input name="column" type="hidden" value="{{$col.Name}}">
                         <textarea name="value">{{$cell}}</textarea>
@@ -26,6 +26,8 @@
                             Save
                         </button>
                     </form>
+
+                    <div class="result"></div>
                 </td>
                 {{else}}
                 <td>{{$cell}}</td>

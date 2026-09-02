@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
+
+	"github.com/Angus-Warman/stf"
 )
 
 type EntityDefinition struct {
@@ -83,8 +85,10 @@ func (e *EntityDefinition) SelectQuery(limit int) string {
 	return fmt.Sprintf("SELECT %s FROM %s LIMIT %d", strings.Join(cols, ", "), e.TableName, limit)
 }
 
-func (e *EntityDefinition) UpdateCell(db *sql.DB, rowID []byte, column string, value string) error {
-	query := fmt.Sprintf("UPDATE %s SET %s = ? WHERE %s = ?", e.TableName, column, e.IDColumn)
+func (e *EntityDefinition) UpdateCell(db *sql.DB, rowID []byte, columnLabel string, value string) error {
+	column, _ := stf.First(e.Columns, func(c ColumnDefinition) bool { return c.Label == columnLabel })
+
+	query := fmt.Sprintf("UPDATE %s SET %s = ? WHERE %s = ?", e.TableName, column.Name, e.IDColumn)
 
 	_, err := db.Exec(query, value, rowID)
 
@@ -121,6 +125,12 @@ func scanRows(rows *sql.Rows, colCount int) ([][]any, error) {
 
 		if err := rows.Scan(dest...); err != nil {
 			return nil, err
+		}
+
+		for i, v := range values {
+			if b, ok := v.([]byte); ok {
+				values[i] = string(b)
+			}
 		}
 
 		allRows = append(allRows, values)

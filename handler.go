@@ -97,7 +97,7 @@ func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(204)
+	w.Write([]byte("Saved"))
 }
 
 //go:embed all:templates
