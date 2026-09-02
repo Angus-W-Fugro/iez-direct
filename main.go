@@ -35,6 +35,7 @@ func startServer() error {
 		ServeStatic(staticFiles).
 		Route("/dv-logs", h.DvLogsPage).
 		Route("/api/dv-logs", h.DvLogsData).
+		Route("PATCH /api/dv-log/edit", h.EditDvLogCell).
 		Route("/api/ping", h.Ping)
 
 	return c.Serve()

@@ -7,30 +7,31 @@
                 {{ .Name }}
             </th>
             {{end}}
-
-            <th>
-                <!-- Controls -->
-            </th>
         </tr>
     </thead>
 
     <tbody>
         {{range .Rows}}
-        <form>
-            <tr>
-                {{range $i, $cell := .Cells}}
-                    {{$col := index $.Columns $i}}
-                    {{if $col.Editable}}
-                    <td>
-                        <textarea name="{{$col.Name}}">{{$cell}}</textarea>
-                        <button>Save</button>
-                    </td>
-                    {{else}}
-                    <td>{{$cell}}</td>
-                    {{end}}
+        {{$row := .}}
+        <tr>
+            {{range $i, $cell := .Cells}}
+                {{$col := index $.Columns $i}}
+                {{if $col.Editable}}
+                <td>
+                    <form>
+                        <input name="RowID" type="hidden" value="{{$row.ID}}">
+                        <input name="Column" type="hidden" value="{{$col.Name}}">
+                        <textarea name="Value">{{$cell}}</textarea>
+                        <button data-on:click="@patch('/api/dv-log/edit', {contentType: 'form'})">
+                            Save
+                        </button>
+                    </form>
+                </td>
+                {{else}}
+                <td>{{$cell}}</td>
                 {{end}}
-            </tr>
-        </form>
+            {{end}}
+        </tr>
         {{end}}
     </tbody>
 </table>

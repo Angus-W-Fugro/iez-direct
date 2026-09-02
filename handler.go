@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/starfederation/datastar-go/datastar"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -75,6 +76,24 @@ func (h *Handler) getDvLogsData() ([]DvLog, error) {
 	}
 
 	return rows, nil
+}
+
+func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
+	type EditSignal struct {
+		RowID  string // Base64
+		Column string
+		Value  string
+	}
+
+	s := &EditSignal{}
+	if err := datastar.ReadSignals(r, s); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	log.Println(s)
+
+	w.WriteHeader(204)
 }
 
 //go:embed all:templates

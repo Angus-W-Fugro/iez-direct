@@ -1,9 +1,13 @@
 package main
 
-import "time"
+import (
+	_ "bytes"
+	"encoding/base64"
+	"time"
+)
 
 type DvLog struct {
-	ID        string    `gorm:"column:SURF_DV_LOG_ID"`
+	ID        []byte    `gorm:"column:SURF_DV_LOG_ID"`
 	SpreadID  int       `gorm:"column:SURF_SPREAD_ID"`
 	VideoDate time.Time `gorm:"column:VIDEO_DATE"`
 	Comment   string    `gorm:"column:LOG_COMMENT"`
@@ -20,15 +24,13 @@ type Column struct {
 }
 
 type Row struct {
+	ID    string
 	Cells []any
 }
 
 func DvLogsToGrid(logs []DvLog) Grid {
 	g := Grid{}
 	g.Columns = []Column{
-		{
-			Name: "ID",
-		},
 		{
 			Name: "SpreadID",
 		},
@@ -43,8 +45,9 @@ func DvLogsToGrid(logs []DvLog) Grid {
 
 	for _, l := range logs {
 		g.Rows = append(g.Rows, Row{
+			ID: base64.StdEncoding.EncodeToString(l.ID),
 			Cells: []any{
-				l.ID, l.SpreadID, l.VideoDate, l.Comment,
+				l.SpreadID, l.VideoDate, l.Comment,
 			},
 		})
 	}
