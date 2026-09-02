@@ -11,7 +11,7 @@ func TestGetData(t *testing.T) {
 	httpmin.LoadEnvFile()
 	h, err := NewHandler()
 	require.NoError(t, err)
-	d, err := h.getDvLogsData()
+	g, err := h.getDvLogsData()
 	require.NoError(t, err)
-	require.Len(t, d, 10)
+	require.Len(t, g.Rows, 10)
 }

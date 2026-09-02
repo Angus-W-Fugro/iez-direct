@@ -1,26 +1,27 @@
 package main
 
 import (
+	"database/sql"
 	"embed"
+	"encoding/base64"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/Angus-Warman/httpmin/parserequest"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type Handler struct {
-	db *gorm.DB
+	db *sql.DB
 }
 
 func NewHandler() (*Handler, error) {
 	dsn := os.Getenv("MYSQL_CONN")
 	dsn = dsn + "?parseTime=true"
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err := sql.Open("mysql", dsn)
 
 	if err != nil {
 		return nil, err
@@ -34,7 +35,7 @@ func NewHandler() (*Handler, error) {
 }
 
 func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
-	err := h.db.Exec("SELECT 1;").Error
+	err := h.db.Ping()
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -54,28 +55,18 @@ func (h *Handler) DvLogsPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
-	data, err := h.getDvLogsData()
+	grid, err := h.getDvLogsData()
 
 	if err != nil {
 		htmlResponse(w, "<span id='response'>"+err.Error()+"</span>")
 		return
 	}
 
-	grid := DvLogsToGrid(data)
-
 	dataGridResponse(w, "#dv-log-table", grid)
 }
 
-func (h *Handler) getDvLogsData() ([]DvLog, error) {
-	rows := []DvLog{}
-
-	err := h.db.Table("surf_dv_logs").Limit(20).Find(&rows).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return rows, nil
+func (h *Handler) getDvLogsData() (Grid, error) {
+	return DvLogDefinition.Grid(h.db)
 }
 
 func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +83,19 @@ func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(s)
+	idBytes, err := base64.StdEncoding.DecodeString(s.RowID)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = DvLogDefinition.UpdateCell(h.db, idBytes, s.Column, s.Value)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(204)
 }

@@ -19,9 +19,9 @@
                 {{if $col.Editable}}
                 <td>
                     <form hx-patch="/api/dv-log/edit" hx-encoding="json">
-                        <input name="RowID" type="hidden" value="{{$row.ID}}">
-                        <input name="Column" type="hidden" value="{{$col.Name}}">
-                        <textarea name="Value">{{$cell}}</textarea>
+                        <input name="rowid" type="hidden" value="{{$row.ID}}">
+                        <input name="column" type="hidden" value="{{$col.Name}}">
+                        <textarea name="value">{{$cell}}</textarea>
                         <button>
                             Save
                         </button>
