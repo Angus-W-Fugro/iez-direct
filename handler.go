@@ -50,23 +50,44 @@ func htmlResponse(w http.ResponseWriter, text string) {
 	w.Write([]byte(text))
 }
 
+type DatagridInit struct {
+	Endpoint string
+	Columns  bool
+}
+
+type GridParams struct {
+	NumRows int
+	Page    int
+}
+
 func (h *Handler) DvLogsPage(w http.ResponseWriter, r *http.Request) {
-	h.render(w, "dv-logs.tmpl", nil)
+	data := DatagridInit{
+		Endpoint: "/api/dv-logs",
+	}
+
+	h.render(w, "dv-logs.tmpl", data)
 }
 
 func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
-	grid, err := h.getDvLogsData()
+	gp, err := parserequest.As[GridParams](r)
 
 	if err != nil {
 		htmlResponse(w, "<span id='response'>"+err.Error()+"</span>")
 		return
 	}
 
-	dataGridResponse(w, "#dv-log-table", grid)
+	grid, err := h.getDvLogsData(gp)
+
+	if err != nil {
+		htmlResponse(w, "<span id='response'>"+err.Error()+"</span>")
+		return
+	}
+
+	gridResponse(w, grid)
 }
 
-func (h *Handler) getDvLogsData() (Grid, error) {
-	return DvLogDefinition.Grid(h.db)
+func (h *Handler) getDvLogsData(gp GridParams) (Grid, error) {
+	return DvLogDefinition.Grid(h.db, gp)
 }
 
 func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +123,6 @@ func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
 
 //go:embed all:templates
 var templateFiles embed.FS
-
 var tmpls = template.Must(template.ParseFS(templateFiles, "templates/*"))
 
 func (h *Handler) render(w http.ResponseWriter, templateName string, data any) {
@@ -113,11 +133,8 @@ func (h *Handler) render(w http.ResponseWriter, templateName string, data any) {
 	}
 }
 
-func dataGridResponse(w http.ResponseWriter, target string, grid Grid) {
-	w.Header().Set("content-type", "text/html")
-	w.Header().Set("datastar-selector", target)
-
-	err := tmpls.ExecuteTemplate(w, "datagrid", grid)
+func gridResponse(w http.ResponseWriter, grid Grid) {
+	err := tmpls.ExecuteTemplate(w, "datagrid-rows", grid)
 
 	if err != nil {
 		log.Println(err)

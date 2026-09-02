@@ -56,8 +56,8 @@ type Row struct {
 	Cells []any
 }
 
-func (e *EntityDefinition) Grid(db *sql.DB) (Grid, error) {
-	query := DvLogDefinition.SelectQuery(10)
+func (e *EntityDefinition) Grid(db *sql.DB, gp GridParams) (Grid, error) {
+	query := DvLogDefinition.SelectQuery(gp)
 
 	rows, err := db.Query(query)
 
@@ -76,13 +76,16 @@ func (e *EntityDefinition) Grid(db *sql.DB) (Grid, error) {
 	return e.ToGrid(allRows), nil
 }
 
-func (e *EntityDefinition) SelectQuery(limit int) string {
+func (e *EntityDefinition) SelectQuery(gp GridParams) string {
+	offset := (gp.Page - 1) * gp.NumRows
+	limit := gp.NumRows
+
 	cols := make([]string, 0, len(e.Columns)+1)
 	cols = append(cols, e.IDColumn)
 	for _, c := range e.Columns {
 		cols = append(cols, c.Name)
 	}
-	return fmt.Sprintf("SELECT %s FROM %s LIMIT %d", strings.Join(cols, ", "), e.TableName, limit)
+	return fmt.Sprintf("SELECT %s FROM %s LIMIT %d OFFSET %d", strings.Join(cols, ", "), e.TableName, limit, offset)
 }
 
 func (e *EntityDefinition) UpdateCell(db *sql.DB, rowID []byte, columnLabel string, value string) error {

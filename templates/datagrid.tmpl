@@ -1,5 +1,23 @@
 {{define "datagrid"}}
-<table>
+<div class="row">
+    <form class="row" hx-get="{{ .Endpoint }}" hx-target="#datagrid-rows" hx-select="#datagrid-rows" hx-trigger="load, change">
+        <label>
+            Rows
+            <input name="numrows" type="number" value="10" min="10" max="500" required>
+        </label>
+
+        <label>
+            Page
+            <input name="page" type="number" value="1" required min="1">
+        </label>
+    </form>
+</div>
+
+<table id="datagrid-rows"></table>
+{{end}}
+
+{{define "datagrid-rows"}}
+<table id="datagrid-rows">
     <thead>
         <tr>
             {{range .Columns}}
@@ -15,23 +33,23 @@
         {{$row := .}}
         <tr>
             {{range $i, $cell := .Cells}}
-                {{$col := index $.Columns $i}}
-                {{if $col.Editable}}
-                <td>
-                    <form hx-patch="/api/dv-log/edit" hx-encoding="json" hx-target="next .result">
-                        <input name="rowid" type="hidden" value="{{$row.ID}}">
-                        <input name="column" type="hidden" value="{{$col.Name}}">
-                        <textarea name="value">{{$cell}}</textarea>
-                        <button>
-                            Save
-                        </button>
-                    </form>
+            {{$col := index $.Columns $i}}
+            {{if $col.Editable}}
+            <td>
+                <form hx-patch="/api/dv-log/edit" hx-encoding="json" hx-target="next .result">
+                    <input name="rowid" type="hidden" value="{{$row.ID}}">
+                    <input name="column" type="hidden" value="{{$col.Name}}">
+                    <textarea name="value">{{$cell}}</textarea>
+                    <button>
+                        Save
+                    </button>
+                </form>
 
-                    <div class="result"></div>
-                </td>
-                {{else}}
-                <td>{{$cell}}</td>
-                {{end}}
+                <div class="result"></div>
+            </td>
+            {{else}}
+            <td>{{$cell}}</td>
+            {{end}}
             {{end}}
         </tr>
         {{end}}

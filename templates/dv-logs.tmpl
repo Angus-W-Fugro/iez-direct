@@ -12,10 +12,8 @@
 
 <body>
     <main>
-        <table id="dv-log-table" hx-get="/api/dv-logs" hx-trigger="load">
-        </table>
+        {{template "datagrid" .}}
     </main>
-
 </body>
 
 </html>
