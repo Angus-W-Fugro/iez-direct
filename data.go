@@ -12,30 +12,21 @@ import (
 type EntityDefinition struct {
 	TableName string
 	IDColumn  string
-	Columns   []ColumnDefinition
-}
-
-type ColumnDefinition struct {
-	Label    string
-	Name     string
-	Editable bool
+	Columns   []Column
 }
 
 var DvLogDefinition = EntityDefinition{
 	TableName: "surf_dv_logs",
 	IDColumn:  "SURF_DV_LOG_ID",
-	Columns: []ColumnDefinition{
+	Columns: []Column{
 		{
-			Name:  "SURF_SPREAD_ID",
-			Label: "SpreadID",
+			Name: "SURF_SPREAD_ID",
 		},
 		{
-			Name:  "VIDEO_DATE",
-			Label: "VideoDate",
+			Name: "VIDEO_DATE",
 		},
 		{
 			Name:     "LOG_COMMENT",
-			Label:    "Comment",
 			Editable: true,
 		},
 	},
@@ -97,8 +88,8 @@ func (e *EntityDefinition) SelectQuery(gp GridParams) string {
 	return fmt.Sprintf("SELECT %s FROM %s %v LIMIT %d OFFSET %d", strings.Join(cols, ", "), e.TableName, filter, limit, offset)
 }
 
-func (e *EntityDefinition) UpdateCell(db *sql.DB, rowID []byte, columnLabel string, value string) error {
-	column, _ := stf.First(e.Columns, func(c ColumnDefinition) bool { return c.Label == columnLabel })
+func (e *EntityDefinition) UpdateCell(db *sql.DB, rowID []byte, colName string, value string) error {
+	column, _ := stf.First(e.Columns, func(c Column) bool { return c.Name == colName })
 
 	query := fmt.Sprintf("UPDATE %s SET %s = ? WHERE %s = ?", e.TableName, column.Name, e.IDColumn)
 
@@ -109,10 +100,7 @@ func (e *EntityDefinition) UpdateCell(db *sql.DB, rowID []byte, columnLabel stri
 
 func (e *EntityDefinition) ToGrid(startNumber int, rows [][]any) Grid {
 	g := Grid{}
-	g.Columns = make([]Column, len(e.Columns))
-	for i, c := range e.Columns {
-		g.Columns[i] = Column{Name: c.Label, Editable: c.Editable}
-	}
+	g.Columns = e.Columns
 
 	for i, row := range rows {
 		id := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%v", row[0])))
