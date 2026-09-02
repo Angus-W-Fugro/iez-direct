@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"html/template"
+	"log"
 	"net/http"
 	"os"
 
@@ -59,14 +60,15 @@ func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = data
-	htmlResponse(w, "<table id='dv-table'>ok</span>")
+	grid := DvLogsToGrid(data)
+
+	dataGridResponse(w, "#dv-log-table", grid)
 }
 
 func (h *Handler) getDvLogsData() ([]DvLog, error) {
 	rows := []DvLog{}
 
-	err := h.db.Table("surf_dv_logs").Limit(10).Find(rows).Error
+	err := h.db.Table("surf_dv_logs").Limit(10).Find(&rows).Error
 
 	if err != nil {
 		return nil, err
@@ -84,6 +86,18 @@ func (h *Handler) render(w http.ResponseWriter, templateName string, data any) {
 	err := tmpls.ExecuteTemplate(w, templateName, data)
 
 	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
+}
+
+func dataGridResponse(w http.ResponseWriter, target string, grid Grid) {
+	w.Header().Set("content-type", "text/html")
+	w.Header().Set("datastar-selector", target)
+
+	err := tmpls.ExecuteTemplate(w, "datagrid", grid)
+
+	if err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), 500)
 	}
 }

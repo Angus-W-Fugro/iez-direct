@@ -1,11 +1,11 @@
 package main
 
 import (
-	"embed"
 	"fmt"
 	"os"
 
 	"github.com/Angus-Warman/httpmin"
+	"github.com/Angus-Warman/httpmin/theme"
 )
 
 func main() {
@@ -15,9 +15,6 @@ func main() {
 		fmt.Fprint(os.Stderr, err)
 	}
 }
-
-//go:embed all:static
-var staticFiles embed.FS
 
 func startServer() error {
 	c := httpmin.New()
@@ -30,7 +27,7 @@ func startServer() error {
 
 	c.
 		OnPort("7588").
-		ServeStatic(staticFiles).
+		RouteHandler("/styles.css", theme.Minimal()).
 		Route("/dv-logs", h.DvLogsPage).
 		Route("/api/dv-logs", h.DvLogsData).
 		Route("/api/ping", h.Ping)
