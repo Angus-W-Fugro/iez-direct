@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/starfederation/datastar-go/datastar"
+	"github.com/Angus-Warman/httpmin/parserequest"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -85,8 +85,9 @@ func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
 		Value  string
 	}
 
-	s := &EditSignal{}
-	if err := datastar.ReadSignals(r, s); err != nil {
+	s, err := parserequest.As[EditSignal](r)
+
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

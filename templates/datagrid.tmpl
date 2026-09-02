@@ -18,11 +18,11 @@
                 {{$col := index $.Columns $i}}
                 {{if $col.Editable}}
                 <td>
-                    <form>
+                    <form hx-patch="/api/dv-log/edit" hx-encoding="json">
                         <input name="RowID" type="hidden" value="{{$row.ID}}">
                         <input name="Column" type="hidden" value="{{$col.Name}}">
                         <textarea name="Value">{{$cell}}</textarea>
-                        <button data-on:click="@patch('/api/dv-log/edit', {contentType: 'form'})">
+                        <button>
                             Save
                         </button>
                     </form>
