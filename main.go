@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"os"
 
@@ -16,6 +17,9 @@ func main() {
 	}
 }
 
+//go:embed all:static
+var staticFiles embed.FS
+
 func startServer() error {
 	c := httpmin.New()
 
@@ -27,7 +31,8 @@ func startServer() error {
 
 	c.
 		OnPort("7588").
-		RouteHandler("/styles.css", theme.Minimal()).
+		RouteHandler("/theme.css", theme.Modern()).
+		ServeStatic(staticFiles).
 		Route("/dv-logs", h.DvLogsPage).
 		Route("/api/dv-logs", h.DvLogsData).
 		Route("/api/ping", h.Ping)
