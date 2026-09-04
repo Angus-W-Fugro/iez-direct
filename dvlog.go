@@ -1,24 +1,27 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type DvLogRow struct {
-	ID           []byte
-	FirstFile    string
-	LastFile     string
-	Workpack     string
-	Installation string
-	Substructure string
-	Component    string
-	SpreadCode   string
-	Date         time.Time
-	Comment      string
+	ID           []byte    `db:"SURF_DV_LOG_ID"`
+	FirstFile    string    `db:"FIRST_FILE"`
+	LastFile     string    `db:"LAST_FILE"`
+	Workpack     string    `db:"TITLE"`
+	Installation string    `db:"INSTALLATION"`
+	Substructure string    `db:"SUBSTRUCTURE"`
+	Component    string    `db:"COMPONENT"`
+	SpreadCode   string    `db:"CODE"`
+	Date         time.Time `db:"VIDEO_DATE"`
+	Comment      string    `db:"LOG_COMMENT"`
 }
 
 type DvLog struct {
@@ -83,7 +86,16 @@ func toTableRows(startNumber int, dvLogs []DvLog) []DvLogTableRow {
 	return rows
 }
 
-var baseQuery = `SELECT dv.SURF_DV_LOG_ID, dv.FIRST_FILE, dv.LAST_FILE, w.TITLE, i.NAME, p.NAME, c.NAME, s.CODE, dv.VIDEO_DATE, dv.LOG_COMMENT
+var baseQuery = `SELECT dv.SURF_DV_LOG_ID,
+dv.FIRST_FILE,
+dv.LAST_FILE,
+w.TITLE,
+i.NAME AS INSTALLATION,
+p.NAME AS SUBSTRUCTURE,
+c.NAME AS COMPONENT,
+s.CODE,
+dv.VIDEO_DATE,
+dv.LOG_COMMENT
 FROM surf_dv_logs dv 
 JOIN workpacks w ON dv.WORKPACK_ID = w.WORKPACK_ID 
 JOIN components c ON c.COMPONENT_ID = dv.COMPONENT_ID
@@ -101,7 +113,7 @@ var sortFieldMap = map[string]string{
 	"Comment":      "dv.LOG_COMMENT",
 }
 
-func GetDvLogs(db *sql.DB, gp *GridParams) ([]DvLog, error) {
+func GetDvLogs(db *sqlx.DB, gp *GridParams) ([]DvLog, error) {
 	offset := (gp.Page - 1) * gp.NumRows
 	query := baseQuery
 
@@ -120,20 +132,14 @@ func GetDvLogs(db *sql.DB, gp *GridParams) ([]DvLog, error) {
 
 	query += fmt.Sprintf(" LIMIT %d OFFSET %d", gp.NumRows, offset)
 
-	rows, err := db.Query(query)
-	if err != nil {
+	var rows []DvLogRow
+	if err := db.Select(&rows, query); err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	var dvLogs []DvLog
+	dvLogs := make([]DvLog, 0, len(rows))
 
-	for rows.Next() {
-		var row DvLogRow
-		if err := rows.Scan(&row.ID, &row.FirstFile, &row.LastFile, &row.Workpack, &row.Installation, &row.Substructure, &row.Component, &row.SpreadCode, &row.Date, &row.Comment); err != nil {
-			return nil, err
-		}
-
+	for _, row := range rows {
 		dvLog := DvLog{
 			ID:           hex.EncodeToString(row.ID),
 			Files:        []string{row.FirstFile},
@@ -155,14 +161,33 @@ func GetDvLogs(db *sql.DB, gp *GridParams) ([]DvLog, error) {
 		dvLogs = append(dvLogs, dvLog)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
 	return dvLogs, nil
 }
 
-func UpdateDvLogComment(db *sql.DB, id []byte, comment string) error {
+func UpdateDvLogComment(db *sqlx.DB, id []byte, comment string) error {
 	_, err := db.Exec(`UPDATE surf_dv_logs SET LOG_COMMENT = ? WHERE SURF_DV_LOG_ID = ?`, comment, id)
 	return err
+}
+
+type VideoData struct {
+	VideoSubPath string
+	FirstFile    string
+}
+
+func DvLogVideoPath(db *sqlx.DB, id []byte) (string, error) {
+	root := os.Getenv("VIDEO_ROOT")
+
+	if root == "" {
+		return "", fmt.Errorf("no video root")
+	}
+
+	const query = `SELECT VIDEO_SUBPATH, FIRST_FILE FROM surf_dv_logs WHERE SURF_DV_LOG_ID = ?`
+
+	data := VideoData{}
+	err := db.QueryRowx(query, id).StructScan(&data)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(root, data.VideoSubPath, data.FirstFile), nil
 }

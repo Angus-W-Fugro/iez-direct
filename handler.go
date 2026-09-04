@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"embed"
 	"encoding/hex"
 	"fmt"
@@ -12,11 +11,11 @@ import (
 
 	"github.com/Angus-Warman/httpmin/parserequest"
 	"github.com/Angus-Warman/stf"
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
 type Handler struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 func NewHandler() (*Handler, error) {
@@ -28,7 +27,7 @@ func NewHandler() (*Handler, error) {
 
 	dsn = dsn + "?parseTime=true"
 
-	db, err := sql.Open("mysql", dsn)
+	db, err := sqlx.Connect("mysql", dsn)
 
 	if err != nil {
 		return nil, err
@@ -64,11 +63,6 @@ func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 func htmlResponse(w http.ResponseWriter, text string) {
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(text))
-}
-
-type DatagridInit struct {
-	Endpoint string
-	Columns  bool
 }
 
 type GridParams struct {
@@ -149,7 +143,7 @@ func (h *Handler) Media(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	path, err := DvLogDefinition.VideoPath(h.db, id)
+	path, err := DvLogVideoPath(h.db, id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -199,15 +193,6 @@ func (h *Handler) render(w http.ResponseWriter, templateName string, data any) {
 	err := tmpls.ExecuteTemplate(w, templateName, data)
 
 	if err != nil {
-		http.Error(w, err.Error(), 500)
-	}
-}
-
-func gridResponse(w http.ResponseWriter, grid *Grid) {
-	err := tmpls.ExecuteTemplate(w, "datagrid-rows", grid)
-
-	if err != nil {
-		log.Println(err)
 		http.Error(w, err.Error(), 500)
 	}
 }
