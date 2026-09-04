@@ -2,12 +2,14 @@
 <dialog id="dialog" hx-on="load -> this.showModal(); this.addEventListener('close', () => this.remove())">
     <div class="column">
         <div class="row">
-            <button onclick="document.getElementById('dialog').close()">x</button>
-            {{range $i, $_ := .Files}}
-            <button data-idx="{{$i}}" onclick="document.getElementById('dv-video').src='/api/media/{{$.LogID}}/{{$i}}'">
-                {{$i}}
-            </button>
-            {{end}}
+            <div class="row">
+                {{range $i, $_ := .Files}}
+                <button data-idx="{{$i}}" onclick="document.getElementById('dv-video').src='/api/media/{{$.LogID}}/{{$i}}'">
+                    {{$i}}
+                </button>
+                {{end}}
+            </div>
+            <button style="margin-left:auto" onclick="document.getElementById('dialog').close()">x</button>
         </div>
         <video id="dv-video" controls autoplay src="/api/media/{{.LogID}}/0"></video>
     </div>
