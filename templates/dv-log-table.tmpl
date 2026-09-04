@@ -18,7 +18,7 @@
         Columns:
         {{range $i, $col := .Columns}}
         <label>
-            <input type="checkbox" data-col="{{$i}}" checked>
+            <input type="checkbox" class="column-toggle" data-col="{{$i}}" checked>
             {{.Name}}
         </label>
         {{end}}
