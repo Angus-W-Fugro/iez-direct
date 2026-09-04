@@ -1,0 +1,5 @@
+{{define "play-modal"}}
+<dialog hx-on="load -> this.showModal()">
+    <video controls autoplay src="/api/media/{{.}}"></video>
+</dialog>
+{{end}}

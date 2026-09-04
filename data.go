@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"fmt"
+	"html/template"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/Angus-Warman/stf"
@@ -47,9 +50,10 @@ type Column struct {
 }
 
 type Row struct {
-	ID     string
-	Number int
-	Cells  []any
+	ID      string
+	Number  int
+	Cells   []any
+	Actions any
 }
 
 func (e *EntityDefinition) Grid(db *sql.DB, gp GridParams) (*Grid, error) {
@@ -106,6 +110,20 @@ func (e *EntityDefinition) UpdateCell(db *sql.DB, rowID []byte, colName string, 
 	return err
 }
 
+func (e *EntityDefinition) VideoPath(db *sql.DB, rowID []byte) (string, error) {
+	var subpath, firstFile string
+
+	query := fmt.Sprintf("SELECT VIDEO_SUBPATH, FIRST_FILE FROM %s WHERE %s = ?", e.TableName, e.IDColumn)
+
+	err := db.QueryRow(query, rowID).Scan(&subpath, &firstFile)
+
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(os.Getenv("VIDEO_ROOT"), subpath, firstFile), nil
+}
+
 func (e *EntityDefinition) ToGrid(startNumber int, rows [][]any) *Grid {
 	g := &Grid{}
 	g.Columns = e.Columns
@@ -113,9 +131,10 @@ func (e *EntityDefinition) ToGrid(startNumber int, rows [][]any) *Grid {
 	for i, row := range rows {
 		id := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%v", row[0])))
 		g.Rows = append(g.Rows, Row{
-			Number: startNumber + i,
-			ID:     id,
-			Cells:  row[1:],
+			Number:  startNumber + i,
+			ID:      id,
+			Cells:   row[1:],
+			Actions: template.HTML(fmt.Sprintf("<button hx-get='/api/play/%v' hx-target='body' hx-swap='beforeend'>Play</button>", id)),
 		})
 	}
 

@@ -34,6 +34,15 @@ func NewHandler() (*Handler, error) {
 	return h, nil
 }
 
+func (h *Handler) IndexPage(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.Error(w, "not found", 404)
+		return
+	}
+
+	http.Redirect(w, r, "/dv-logs", http.StatusSeeOther)
+}
+
 func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
 	err := h.db.Ping()
 
@@ -89,6 +98,35 @@ func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) getDvLogsData(gp GridParams) (*Grid, error) {
 	return DvLogDefinition.Grid(h.db, gp)
+}
+
+func (h *Handler) Play(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	if _, err := base64.StdEncoding.DecodeString(id); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	h.render(w, "play-modal", id)
+}
+
+func (h *Handler) Media(w http.ResponseWriter, r *http.Request) {
+	id, err := base64.StdEncoding.DecodeString(r.PathValue("id"))
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	path, err := DvLogDefinition.VideoPath(h.db, id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	http.ServeFile(w, r, path)
 }
 
 func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
