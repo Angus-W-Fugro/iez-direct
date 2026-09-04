@@ -6,32 +6,3 @@ video {
     object-fit: contain;
     max-width: 60vw;
 }
-
-.dv-log-controls {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.dv-log-controls form {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.column-toggles {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.column-toggles label {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    cursor: pointer;
-    user-select: none;
-}

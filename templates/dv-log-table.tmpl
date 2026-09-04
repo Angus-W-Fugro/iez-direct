@@ -1,5 +1,5 @@
 {{define "dv-log-table"}}
-<div class="dv-log-controls">
+<div class="row">
     <form hx-get="/api/dv-logs" hx-target="#dv-log-rows" hx-trigger="change delay:300ms" hx-swap="innerHTML">
         <input name="page" type="hidden" value="{{.Page}}">
         <input name="numrows" type="hidden" value="{{.NumRows}}">
@@ -14,11 +14,11 @@
         </label>
     </form>
 
-    <div class="column-toggles">
+    <div class="row">
         Columns:
         {{range $i, $col := .Columns}}
         <label>
-            <input type="checkbox" class="column-toggle" data-col="{{$i}}" checked>
+            <input type="checkbox" data-col="{{$i}}" checked>
             {{.Name}}
         </label>
         {{end}}
@@ -32,7 +32,6 @@
             {{range $i, $col := .Columns}}
             <th data-col="{{$i}}">{{.Name}}</th>
             {{end}}
-            <th>Files</th>
             <th></th>
         </tr>
     </thead>
@@ -92,7 +91,6 @@
     {{range $j, $cell := .Cells}}
     <td data-col="{{$j}}">{{$cell}}</td>
     {{end}}
-    <td>{{.Files}}</td>
     <td>
         <button hx-get="/api/play/{{.ID}}" hx-target="body" hx-swap="beforeend">Play</button>
     </td>

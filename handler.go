@@ -91,7 +91,7 @@ func (h *Handler) DvLogsPage(w http.ResponseWriter, r *http.Request) {
 		SortOptions: DvLogSortOptions,
 		Page:        1,
 		NumRows:     50,
-		Colspan:     len(DvLogColumns) + 3,
+		Colspan:     len(DvLogColumns) + 2,
 	}
 
 	h.render(w, "dv-logs.tmpl", data)
@@ -122,7 +122,7 @@ func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
 		Columns:     DvLogColumns,
 		SortOptions: DvLogSortOptions,
 		SortBy:      sortBy,
-		Colspan:     len(DvLogColumns) + 3,
+		Colspan:     len(DvLogColumns) + 2,
 	}
 
 	w.Header().Set("Content-Type", "text/html")
