@@ -12,6 +12,16 @@ import (
 	"github.com/Angus-Warman/stf"
 )
 
+func openDB(dsn string) (*sql.DB, error) {
+	if dsn == "" {
+		return nil, fmt.Errorf("no conn string")
+	}
+
+	dsn = dsn + "?parseTime=true"
+
+	return sql.Open("mysql", dsn)
+}
+
 type EntityDefinition struct {
 	TableName string
 	IDColumn  string
