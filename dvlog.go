@@ -170,8 +170,8 @@ func UpdateDvLogComment(db *sqlx.DB, id []byte, comment string) error {
 }
 
 type VideoData struct {
-	VideoSubPath string
-	FirstFile    string
+	VideoSubPath string `db:"VIDEO_SUBPATH"`
+	FirstFile    string `db:"FIRST_FILE"`
 }
 
 func DvLogVideoPath(db *sqlx.DB, id []byte) (string, error) {
@@ -181,7 +181,7 @@ func DvLogVideoPath(db *sqlx.DB, id []byte) (string, error) {
 		return "", fmt.Errorf("no video root")
 	}
 
-	const query = `SELECT VIDEO_SUBPATH AS 'VideoSubPath', FIRST_FILE AS 'FirstFile' FROM surf_dv_logs WHERE SURF_DV_LOG_ID = ?`
+	const query = `SELECT VIDEO_SUBPATH, FIRST_FILE FROM surf_dv_logs WHERE SURF_DV_LOG_ID = ?`
 
 	data := VideoData{}
 	err := db.QueryRowx(query, id).StructScan(&data)
