@@ -1,5 +1,15 @@
 {{define "play-modal"}}
-<dialog hx-on="load -> this.showModal(); this.addEventListener('close', () => this.remove())">
-    <video controls autoplay src="/api/media/{{.}}"></video>
+<dialog id="dialog" hx-on="load -> this.showModal(); this.addEventListener('close', () => this.remove())">
+    <div class="column">
+        <div class="row">
+            <button onclick="document.getElementById('dialog').close()">x</button>
+            {{range $i, $_ := .Files}}
+            <button data-idx="{{$i}}" onclick="document.getElementById('dv-video').src='/api/media/{{$.LogID}}/{{$i}}'">
+                {{$i}}
+            </button>
+            {{end}}
+        </div>
+        <video id="dv-video" controls autoplay src="/api/media/{{.LogID}}/0"></video>
+    </div>
 </dialog>
 {{end}}

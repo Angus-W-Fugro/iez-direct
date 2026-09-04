@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/Angus-Warman/httpmin/parserequest"
 	"github.com/Angus-Warman/stf"
@@ -111,23 +112,46 @@ func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Play(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	if _, err := hex.DecodeString(id); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	h.render(w, "play-modal", id)
-}
-
-func (h *Handler) Media(w http.ResponseWriter, r *http.Request) {
-	id, err := hex.DecodeString(r.PathValue("id"))
+	idBytes, err := hex.DecodeString(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	path, err := DvLogVideoPath(h.db, id)
+	data, err := GetVideoData(h.db, idBytes)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	h.render(w, "play-modal", data)
+}
+
+func (h *Handler) Media(w http.ResponseWriter, r *http.Request) {
+	id, err := hex.DecodeString(r.PathValue("logID"))
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	idx, err := strconv.Atoi(r.PathValue("fileIdx"))
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	data, err := GetVideoData(h.db, id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	path, err := data.FilePath(idx)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)

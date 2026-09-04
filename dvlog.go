@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -13,8 +14,6 @@ import (
 
 type DvLogRow struct {
 	ID           []byte    `db:"SURF_DV_LOG_ID"`
-	FirstFile    string    `db:"FIRST_FILE"`
-	LastFile     string    `db:"LAST_FILE"`
 	Workpack     string    `db:"TITLE"`
 	Installation string    `db:"INSTALLATION"`
 	Substructure string    `db:"SUBSTRUCTURE"`
@@ -26,7 +25,6 @@ type DvLogRow struct {
 
 type DvLog struct {
 	ID           string // Base64-encoded
-	Files        []string
 	Workpack     string
 	Installation string
 	Substructure string
@@ -87,8 +85,6 @@ func toTableRows(startNumber int, dvLogs []DvLog) []DvLogTableRow {
 }
 
 var baseQuery = `SELECT dv.SURF_DV_LOG_ID,
-dv.FIRST_FILE,
-dv.LAST_FILE,
 w.TITLE,
 i.NAME AS INSTALLATION,
 p.NAME AS SUBSTRUCTURE,
@@ -142,7 +138,6 @@ func GetDvLogs(db *sqlx.DB, gp *GridParams) ([]DvLog, error) {
 	for _, row := range rows {
 		dvLog := DvLog{
 			ID:           hex.EncodeToString(row.ID),
-			Files:        []string{row.FirstFile},
 			Workpack:     row.Workpack,
 			Installation: row.Installation,
 			Substructure: row.Substructure,
@@ -150,12 +145,6 @@ func GetDvLogs(db *sqlx.DB, gp *GridParams) ([]DvLog, error) {
 			SpreadCode:   row.SpreadCode,
 			Date:         row.Date,
 			Comment:      row.Comment,
-		}
-
-		if row.LastFile != row.FirstFile {
-			dvLog.Files = append(dvLog.Files, row.LastFile)
-
-			// TODO: use the file suffix to detect if there are *multiple* files
 		}
 
 		dvLogs = append(dvLogs, dvLog)
@@ -169,25 +158,53 @@ func UpdateDvLogComment(db *sqlx.DB, id []byte, comment string) error {
 	return err
 }
 
-type VideoData struct {
-	VideoSubPath string `db:"VIDEO_SUBPATH"`
-	FirstFile    string `db:"FIRST_FILE"`
+type VideoDataRow struct {
+	LogID        []byte         `db:"SURF_DV_LOG_ID"`
+	VideoSubPath string         `db:"VIDEO_SUBPATH"`
+	FirstFile    string         `db:"FIRST_FILE"`
+	LastFile     sql.NullString `db:"LAST_FILE"`
 }
 
-func DvLogVideoPath(db *sqlx.DB, id []byte) (string, error) {
+type VideoData struct {
+	LogID        string // Hex-encoded
+	VideoSubPath string
+	Files        []string
+}
+
+func GetVideoData(db *sqlx.DB, id []byte) (*VideoData, error) {
+	const query = `SELECT SURF_DV_LOG_ID, VIDEO_SUBPATH, FIRST_FILE, LAST_FILE
+FROM surf_dv_logs WHERE SURF_DV_LOG_ID = ?`
+
+	var row VideoDataRow
+	if err := db.Get(&row, query, id); err != nil {
+		return nil, err
+	}
+
+	data := &VideoData{
+		LogID:        hex.EncodeToString(row.LogID),
+		VideoSubPath: row.VideoSubPath,
+		Files:        []string{row.FirstFile},
+	}
+
+	if row.LastFile.Valid && row.LastFile.String != row.FirstFile {
+		data.Files = append(data.Files, row.LastFile.String)
+
+		// TODO: Use suffix to check for additional files
+	}
+
+	return data, nil
+}
+
+func (v *VideoData) FilePath(idx int) (string, error) {
 	root := os.Getenv("VIDEO_ROOT")
 
 	if root == "" {
 		return "", fmt.Errorf("no video root")
 	}
 
-	const query = `SELECT VIDEO_SUBPATH, FIRST_FILE FROM surf_dv_logs WHERE SURF_DV_LOG_ID = ?`
-
-	data := VideoData{}
-	err := db.QueryRowx(query, id).StructScan(&data)
-	if err != nil {
-		return "", err
+	if idx < 0 || idx >= len(v.Files) {
+		return "", fmt.Errorf("file index %d out of range", idx)
 	}
 
-	return filepath.Join(root, data.VideoSubPath, data.FirstFile), nil
+	return filepath.Join(root, v.VideoSubPath, v.Files[idx]), nil
 }
