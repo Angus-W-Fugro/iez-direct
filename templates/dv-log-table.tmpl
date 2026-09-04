@@ -30,7 +30,7 @@
         <tr>
             <th>#</th>
             {{range $i, $col := .Columns}}
-            <th data-col="{{$i}}">{{.Name}}</th>
+            <th data-col-header="{{$i}}">{{.Name}}</th>
             {{end}}
             <th>Comment</th>
             <th></th>
@@ -61,7 +61,7 @@
             const col = cb.dataset.col;
             const visible = !(col in hidden);
             cb.checked = visible;
-            document.querySelectorAll('[data-col="' + col + '"]').forEach(function(el) {
+            document.querySelectorAll('[data-col-header="' + col + '"], [data-col-cell="' + col + '"]').forEach(function(el) {
                 el.style.display = visible ? '' : 'none';
             });
         });
@@ -81,6 +81,10 @@
     });
 
     applyVisibility();
+
+    document.body.addEventListener('htmx:after:swap', function(e) {
+        applyVisibility();
+    });
 })();
 </script>
 {{end}}
@@ -91,7 +95,7 @@
 <tr>
     <td>{{$row.Number}}</td>
     {{range $j, $cell := $row.Cells}}
-    <td data-col="{{$j}}">{{$cell}}</td>
+    <td data-col-cell="{{$j}}">{{$cell}}</td>
     {{end}}
     <td>
         <form class="row" hx-patch="/api/dv-log/edit" hx-encoding="json" hx-target="next .result">
