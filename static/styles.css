@@ -1,3 +1,8 @@
 :root {
     --max-width: 900ch;
 }
+
+video {
+    object-fit: contain;
+    max-width: 60vw;
+}
