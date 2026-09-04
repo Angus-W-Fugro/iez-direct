@@ -93,7 +93,12 @@ func (e *EntityDefinition) SelectQuery(gp GridParams) string {
 		filter = "WHERE " + *gp.Filter
 	}
 
-	return fmt.Sprintf("SELECT %s FROM %s %v LIMIT %d OFFSET %d", strings.Join(cols, ", "), e.TableName, filter, limit, offset)
+	orderBy := ""
+	if gp.SortBy != nil {
+		orderBy = "ORDER BY " + *gp.SortBy
+	}
+
+	return fmt.Sprintf("SELECT %s FROM %s %v %v LIMIT %d OFFSET %d", strings.Join(cols, ", "), e.TableName, filter, orderBy, limit, offset)
 }
 
 func (e *EntityDefinition) UpdateCell(db *sql.DB, rowID []byte, colName string, value string) error {

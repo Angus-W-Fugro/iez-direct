@@ -68,6 +68,7 @@ type GridParams struct {
 	NumRows int
 	Page    int
 	Filter  *string
+	SortBy  *string
 }
 
 func (h *Handler) DvLogsPage(w http.ResponseWriter, r *http.Request) {
