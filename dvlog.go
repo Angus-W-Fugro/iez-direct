@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 )
 
@@ -28,11 +29,47 @@ type DvLog struct {
 	Comment      string
 }
 
-var baseQuery = `SELECT dv.SURF_DV_LOG_ID AS 'ID', w.TITLE AS 'Workpack', c.NAME AS 'Component'
+var baseQuery = `SELECT dv.SURF_DV_LOG_ID, dv.FIRST_FILE, dv.LAST_FILE, w.TITLE, i.NAME, p.NAME, c.NAME, s.CODE, dv.LOG_COMMENT
 FROM surf_dv_logs dv 
-JOIN workpacks w ON dv.WORKPACK_ID = dv.WORKPACK_ID 
-JOIN components c ON c.COMPONENT_ID = dv.COMPONENT_ID`
+JOIN workpacks w ON dv.WORKPACK_ID = w.WORKPACK_ID 
+JOIN components c ON c.COMPONENT_ID = dv.COMPONENT_ID
+JOIN components i ON i.COMPONENT_ID = c.INSTALLATION_ID
+LEFT JOIN components p ON p.COMPONENT_ID = c.PARENT_ID
+JOIN surf_spreads s ON s.SURF_SPREAD_ID = dv.SURF_SPREAD_ID`
 
 func GetDvLogs(db *sql.DB, gp *GridParams) ([]DvLog, error) {
-	return nil, fmt.Errorf("not implemented")
+	offset := (gp.Page - 1) * gp.NumRows
+	query := baseQuery + fmt.Sprintf(" LIMIT %d OFFSET %d", gp.NumRows, offset)
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var dvLogs []DvLog
+
+	for rows.Next() {
+		var row DvLogRow
+		if err := rows.Scan(&row.ID, &row.FirstFile, &row.LastFile, &row.Workpack, &row.Installation, &row.Substructure, &row.Component, &row.SpreadCode, &row.Comment); err != nil {
+			return nil, err
+		}
+
+		dvLogs = append(dvLogs, DvLog{
+			ID:           hex.EncodeToString(row.ID),
+			Files:        []string{row.FirstFile, row.LastFile},
+			Workpack:     row.Workpack,
+			Installation: row.Installation,
+			Substructure: row.Substructure,
+			Component:    row.Component,
+			SpreadCode:   row.SpreadCode,
+			Comment:      row.Comment,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return dvLogs, nil
 }

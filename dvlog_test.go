@@ -15,5 +15,14 @@ func TestGetDvLogs(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Len(t, dvLogs, 10)
-	// TODO: Assert that all values are populated
+	for _, dvLog := range dvLogs {
+		require.NotEmpty(t, dvLog.ID)
+		require.NotEmpty(t, dvLog.Files)
+		require.NotEmpty(t, dvLog.Workpack)
+		require.NotEmpty(t, dvLog.Installation)
+		require.NotEmpty(t, dvLog.Substructure)
+		require.NotEmpty(t, dvLog.Component)
+		require.NotEmpty(t, dvLog.SpreadCode)
+		require.NotEmpty(t, dvLog.Comment)
+	}
 }
