@@ -8,7 +8,7 @@
             Sort by
             <select name="sortby">
                 {{range .SortOptions}}
-                <option value="{{.Field}}" {{if eq .Field $.SortBy}}selected{{end}}>{{.Name}}</option>
+                <option value="{{.}}">{{.}}</option>
                 {{end}}
             </select>
         </label>
@@ -19,7 +19,7 @@
         {{range $i, $col := .Columns}}
         <label>
             <input type="checkbox" class="column-toggle" data-col="{{$i}}" checked>
-            {{.Name}}
+            {{.}}
         </label>
         {{end}}
     </div>
@@ -30,7 +30,7 @@
         <tr>
             <th>#</th>
             {{range $i, $col := .Columns}}
-            <th data-col-header="{{$i}}">{{.Name}}</th>
+            <th data-col-header="{{$i}}">{{.}}</th>
             {{end}}
             <th>Comment</th>
             <th></th>

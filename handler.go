@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/Angus-Warman/httpmin/parserequest"
+	"github.com/Angus-Warman/stf"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -85,10 +86,14 @@ func (h *Handler) DvLogsPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sortOptions := []string{}
+	sortOptions = append(sortOptions, stf.Convert(DvLogColumns, func(c string) string { return c + " ASC" })...)
+	sortOptions = append(sortOptions, stf.Convert(DvLogColumns, func(c string) string { return c + " DESC" })...)
+
 	data := DvLogPageData{
 		Rows:        toTableRows(1, dvLogs),
 		Columns:     DvLogColumns,
-		SortOptions: DvLogSortOptions,
+		SortOptions: sortOptions,
 		Page:        1,
 		NumRows:     50,
 		Colspan:     len(DvLogColumns) + 3,
@@ -112,17 +117,9 @@ func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sortBy := ""
-	if gp.SortBy != nil {
-		sortBy = *gp.SortBy
-	}
-
 	data := DvLogPageData{
-		Rows:        toTableRows(((gp.Page-1)*gp.NumRows)+1, dvLogs),
-		Columns:     DvLogColumns,
-		SortOptions: DvLogSortOptions,
-		SortBy:      sortBy,
-		Colspan:     len(DvLogColumns) + 3,
+		Rows:    toTableRows(((gp.Page-1)*gp.NumRows)+1, dvLogs),
+		Colspan: len(DvLogColumns) + 3,
 	}
 
 	w.Header().Set("Content-Type", "text/html")

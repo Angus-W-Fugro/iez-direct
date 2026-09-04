@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type DvLogRow struct {
@@ -16,6 +17,7 @@ type DvLogRow struct {
 	Substructure string
 	Component    string
 	SpreadCode   string
+	Date         time.Time
 	Comment      string
 }
 
@@ -27,33 +29,17 @@ type DvLog struct {
 	Substructure string
 	Component    string
 	SpreadCode   string
+	Date         time.Time
 	Comment      string
 }
 
-type DvLogColumn struct {
-	Name string
-}
-
-var DvLogColumns = []DvLogColumn{
-	{Name: "Workpack"},
-	{Name: "Installation"},
-	{Name: "Substructure"},
-	{Name: "Component"},
-	{Name: "Spread Code"},
-}
-
-type SortOption struct {
-	Field string
-	Name  string
-}
-
-var DvLogSortOptions = []SortOption{
-	{Field: "Workpack", Name: "Workpack"},
-	{Field: "Installation", Name: "Installation"},
-	{Field: "Substructure", Name: "Substructure"},
-	{Field: "Component", Name: "Component"},
-	{Field: "SpreadCode", Name: "Spread Code"},
-	{Field: "Comment", Name: "Comment"},
+var DvLogColumns = []string{
+	"Workpack",
+	"Installation",
+	"Substructure",
+	"Component",
+	"SpreadCode",
+	"Date",
 }
 
 type DvLogTableRow struct {
@@ -65,8 +51,8 @@ type DvLogTableRow struct {
 
 type DvLogPageData struct {
 	Rows        []DvLogTableRow
-	Columns     []DvLogColumn
-	SortOptions []SortOption
+	Columns     []string
+	SortOptions []string
 	SortBy      string
 	Page        int
 	NumRows     int
@@ -80,11 +66,8 @@ func (d DvLog) Cells() []string {
 		d.Substructure,
 		d.Component,
 		d.SpreadCode,
+		d.Date.Format("2006/01/02 03:04:05"),
 	}
-}
-
-func (d DvLog) FilesString() string {
-	return strings.Join(d.Files, ", ")
 }
 
 func toTableRows(startNumber int, dvLogs []DvLog) []DvLogTableRow {
@@ -100,7 +83,7 @@ func toTableRows(startNumber int, dvLogs []DvLog) []DvLogTableRow {
 	return rows
 }
 
-var baseQuery = `SELECT dv.SURF_DV_LOG_ID, dv.FIRST_FILE, dv.LAST_FILE, w.TITLE, i.NAME, p.NAME, c.NAME, s.CODE, dv.LOG_COMMENT
+var baseQuery = `SELECT dv.SURF_DV_LOG_ID, dv.FIRST_FILE, dv.LAST_FILE, w.TITLE, i.NAME, p.NAME, c.NAME, s.CODE, dv.VIDEO_DATE, dv.LOG_COMMENT
 FROM surf_dv_logs dv 
 JOIN workpacks w ON dv.WORKPACK_ID = w.WORKPACK_ID 
 JOIN components c ON c.COMPONENT_ID = dv.COMPONENT_ID
@@ -114,6 +97,7 @@ var sortFieldMap = map[string]string{
 	"Substructure": "p.NAME",
 	"Component":    "c.NAME",
 	"SpreadCode":   "s.CODE",
+	"Date":         "dv.VIDEO_DATE",
 	"Comment":      "dv.LOG_COMMENT",
 }
 
@@ -122,8 +106,15 @@ func GetDvLogs(db *sql.DB, gp *GridParams) ([]DvLog, error) {
 	query := baseQuery
 
 	if gp.SortBy != nil && *gp.SortBy != "" {
-		if sqlCol, ok := sortFieldMap[*gp.SortBy]; ok {
+		parts := strings.Split(*gp.SortBy, " ")
+		field := parts[0]
+
+		if sqlCol, ok := sortFieldMap[field]; ok {
 			query += " ORDER BY " + sqlCol
+
+			if len(parts) > 1 && (parts[1] == "DESC" || parts[1] == "desc") {
+				query += " DESC"
+			}
 		}
 	}
 
@@ -139,7 +130,7 @@ func GetDvLogs(db *sql.DB, gp *GridParams) ([]DvLog, error) {
 
 	for rows.Next() {
 		var row DvLogRow
-		if err := rows.Scan(&row.ID, &row.FirstFile, &row.LastFile, &row.Workpack, &row.Installation, &row.Substructure, &row.Component, &row.SpreadCode, &row.Comment); err != nil {
+		if err := rows.Scan(&row.ID, &row.FirstFile, &row.LastFile, &row.Workpack, &row.Installation, &row.Substructure, &row.Component, &row.SpreadCode, &row.Date, &row.Comment); err != nil {
 			return nil, err
 		}
 
@@ -151,6 +142,7 @@ func GetDvLogs(db *sql.DB, gp *GridParams) ([]DvLog, error) {
 			Substructure: row.Substructure,
 			Component:    row.Component,
 			SpreadCode:   row.SpreadCode,
+			Date:         row.Date,
 			Comment:      row.Comment,
 		}
 
