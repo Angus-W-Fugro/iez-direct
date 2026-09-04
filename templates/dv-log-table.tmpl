@@ -1,0 +1,106 @@
+{{define "dv-log-table"}}
+<div class="dv-log-controls">
+    <form hx-get="/api/dv-logs" hx-target="#dv-log-rows" hx-trigger="change delay:300ms" hx-swap="innerHTML">
+        <input name="page" type="hidden" value="{{.Page}}">
+        <input name="numrows" type="hidden" value="{{.NumRows}}">
+
+        <label>
+            Sort by
+            <select name="sortby">
+                {{range .SortOptions}}
+                <option value="{{.Field}}" {{if eq .Field $.SortBy}}selected{{end}}>{{.Name}}</option>
+                {{end}}
+            </select>
+        </label>
+    </form>
+
+    <div class="column-toggles">
+        Columns:
+        {{range $i, $col := .Columns}}
+        <label>
+            <input type="checkbox" class="column-toggle" data-col="{{$i}}" checked>
+            {{.Name}}
+        </label>
+        {{end}}
+    </div>
+</div>
+
+<table id="dv-log-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            {{range $i, $col := .Columns}}
+            <th data-col="{{$i}}">{{.Name}}</th>
+            {{end}}
+            <th>Files</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="dv-log-rows">
+        {{template "dv-log-table-rows" .}}
+    </tbody>
+</table>
+
+<script>
+(function() {
+    const STORAGE_KEY = 'dvlog:col-hidden';
+    const toggles = document.querySelectorAll('.column-toggle');
+
+    function getHidden() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+        catch { return {}; }
+    }
+
+    function setHidden(hidden) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(hidden));
+    }
+
+    function applyVisibility() {
+        const hidden = getHidden();
+        toggles.forEach(function(cb) {
+            const col = cb.dataset.col;
+            const visible = !(col in hidden);
+            cb.checked = visible;
+            document.querySelectorAll('[data-col="' + col + '"]').forEach(function(el) {
+                el.style.display = visible ? '' : 'none';
+            });
+        });
+    }
+
+    toggles.forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            const hidden = getHidden();
+            if (cb.checked) {
+                delete hidden[cb.dataset.col];
+            } else {
+                hidden[cb.dataset.col] = true;
+            }
+            setHidden(hidden);
+            applyVisibility();
+        });
+    });
+
+    applyVisibility();
+})();
+</script>
+{{end}}
+
+{{define "dv-log-table-rows"}}
+{{range .Rows}}
+<tr>
+    <td>{{.Number}}</td>
+    {{range $j, $cell := .Cells}}
+    <td data-col="{{$j}}">{{$cell}}</td>
+    {{end}}
+    <td>{{.Files}}</td>
+    <td>
+        <button hx-get="/api/play/{{.ID}}" hx-target="body" hx-swap="beforeend">Play</button>
+    </td>
+</tr>
+{{end}}
+{{if not .Rows}}
+<tr>
+    <td colspan="{{.Colspan}}">No rows returned</td>
+</tr>
+{{end}}
+{{end}}

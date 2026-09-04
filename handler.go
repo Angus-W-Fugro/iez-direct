@@ -78,8 +78,20 @@ type GridParams struct {
 }
 
 func (h *Handler) DvLogsPage(w http.ResponseWriter, r *http.Request) {
-	data := DatagridInit{
-		Endpoint: "/api/dv-logs",
+	dvLogs, err := GetDvLogs(h.db, &GridParams{Page: 1, NumRows: 50})
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := DvLogPageData{
+		Rows:        toTableRows(1, dvLogs),
+		Columns:     DvLogColumns,
+		SortOptions: DvLogSortOptions,
+		Page:        1,
+		NumRows:     50,
+		Colspan:     len(DvLogColumns) + 3,
 	}
 
 	h.render(w, "dv-logs.tmpl", data)
@@ -93,18 +105,32 @@ func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	grid, err := h.getDvLogsData(gp)
+	dvLogs, err := GetDvLogs(h.db, &gp)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	gridResponse(w, grid)
-}
+	sortBy := ""
+	if gp.SortBy != nil {
+		sortBy = *gp.SortBy
+	}
 
-func (h *Handler) getDvLogsData(gp GridParams) (*Grid, error) {
-	return DvLogDefinition.Grid(h.db, gp)
+	data := DvLogPageData{
+		Rows:        toTableRows(((gp.Page-1)*gp.NumRows)+1, dvLogs),
+		Columns:     DvLogColumns,
+		SortOptions: DvLogSortOptions,
+		SortBy:      sortBy,
+		Colspan:     len(DvLogColumns) + 3,
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	err = tmpls.ExecuteTemplate(w, "dv-log-table-rows", data)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (h *Handler) Play(w http.ResponseWriter, r *http.Request) {
