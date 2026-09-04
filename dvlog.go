@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strings"
 )
@@ -146,7 +146,7 @@ func GetDvLogs(db *sql.DB, gp *GridParams) ([]DvLog, error) {
 		}
 
 		dvLog := DvLog{
-			ID:           base64.StdEncoding.EncodeToString(row.ID),
+			ID:           hex.EncodeToString(row.ID),
 			Files:        []string{row.FirstFile},
 			Workpack:     row.Workpack,
 			Installation: row.Installation,

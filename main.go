@@ -36,8 +36,8 @@ func startServer() error {
 		Route("/dv-logs", h.DvLogsPage).
 		Route("/api/dv-logs", h.DvLogsData).
 		Route("PATCH /api/dv-log/edit", h.EditDvLogCell).
-		Route("/api/play/{id...}", h.Play).
-		Route("/api/media/{id...}", h.Media).
+		Route("/api/play/{id}", h.Play).
+		Route("/api/media/{id}", h.Media).
 		Route("/api/ping", h.Ping).
 		Route("/", h.IndexPage)
 

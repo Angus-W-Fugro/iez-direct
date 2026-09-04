@@ -3,7 +3,7 @@ package main
 import (
 	"database/sql"
 	"embed"
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"html/template"
 	"log"
@@ -136,7 +136,7 @@ func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Play(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	if _, err := base64.StdEncoding.DecodeString(id); err != nil {
+	if _, err := hex.DecodeString(id); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -145,7 +145,7 @@ func (h *Handler) Play(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Media(w http.ResponseWriter, r *http.Request) {
-	id, err := base64.StdEncoding.DecodeString(r.PathValue("id"))
+	id, err := hex.DecodeString(r.PathValue("id"))
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -166,7 +166,7 @@ func (h *Handler) Media(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
 	type EditSignal struct {
-		RowID  string // Base64
+		RowID  string // Hex
 		Column string
 		Value  string
 	}
@@ -178,7 +178,7 @@ func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idBytes, err := base64.StdEncoding.DecodeString(s.RowID)
+	idBytes, err := hex.DecodeString(s.RowID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

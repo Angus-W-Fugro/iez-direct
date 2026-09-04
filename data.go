@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"html/template"
 	"os"
@@ -144,7 +144,7 @@ func (e *EntityDefinition) ToGrid(startNumber int, rows [][]any) *Grid {
 	g.Columns = e.Columns
 
 	for i, row := range rows {
-		id := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%v", row[0])))
+		id := hex.EncodeToString([]byte(fmt.Sprintf("%v", row[0])))
 		g.Rows = append(g.Rows, Row{
 			Number:  startNumber + i,
 			ID:      id,
