@@ -49,22 +49,6 @@ func (h *Handler) IndexPage(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/dv-logs", http.StatusSeeOther)
 }
 
-func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
-	err := h.db.Ping()
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusServiceUnavailable)
-		return
-	}
-
-	htmlResponse(w, "<span id='response'>ok</span>")
-}
-
-func htmlResponse(w http.ResponseWriter, text string) {
-	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(text))
-}
-
 type GridParams struct {
 	NumRows int
 	Page    int
