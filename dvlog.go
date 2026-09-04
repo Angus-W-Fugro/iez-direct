@@ -40,7 +40,6 @@ var DvLogColumns = []DvLogColumn{
 	{Name: "Substructure"},
 	{Name: "Component"},
 	{Name: "Spread Code"},
-	{Name: "Comment"},
 }
 
 type SortOption struct {
@@ -58,10 +57,10 @@ var DvLogSortOptions = []SortOption{
 }
 
 type DvLogTableRow struct {
-	Number int
-	Cells  []string
-	Files  string
-	ID     string
+	Number  int
+	Cells   []string
+	Comment string
+	ID      string
 }
 
 type DvLogPageData struct {
@@ -81,7 +80,6 @@ func (d DvLog) Cells() []string {
 		d.Substructure,
 		d.Component,
 		d.SpreadCode,
-		d.Comment,
 	}
 }
 
@@ -93,10 +91,10 @@ func toTableRows(startNumber int, dvLogs []DvLog) []DvLogTableRow {
 	rows := make([]DvLogTableRow, 0, len(dvLogs))
 	for i, dvLog := range dvLogs {
 		rows = append(rows, DvLogTableRow{
-			Number: startNumber + i,
-			Cells:  dvLog.Cells(),
-			Files:  dvLog.FilesString(),
-			ID:     dvLog.ID,
+			Number:  startNumber + i,
+			Cells:   dvLog.Cells(),
+			Comment: dvLog.Comment,
+			ID:      dvLog.ID,
 		})
 	}
 	return rows
@@ -170,4 +168,9 @@ func GetDvLogs(db *sql.DB, gp *GridParams) ([]DvLog, error) {
 	}
 
 	return dvLogs, nil
+}
+
+func UpdateDvLogComment(db *sql.DB, id []byte, comment string) error {
+	_, err := db.Exec(`UPDATE surf_dv_logs SET LOG_COMMENT = ? WHERE SURF_DV_LOG_ID = ?`, comment, id)
+	return err
 }

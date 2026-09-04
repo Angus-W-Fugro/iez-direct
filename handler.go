@@ -91,7 +91,7 @@ func (h *Handler) DvLogsPage(w http.ResponseWriter, r *http.Request) {
 		SortOptions: DvLogSortOptions,
 		Page:        1,
 		NumRows:     50,
-		Colspan:     len(DvLogColumns) + 2,
+		Colspan:     len(DvLogColumns) + 3,
 	}
 
 	h.render(w, "dv-logs.tmpl", data)
@@ -122,7 +122,7 @@ func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
 		Columns:     DvLogColumns,
 		SortOptions: DvLogSortOptions,
 		SortBy:      sortBy,
-		Colspan:     len(DvLogColumns) + 2,
+		Colspan:     len(DvLogColumns) + 3,
 	}
 
 	w.Header().Set("Content-Type", "text/html")
@@ -166,9 +166,8 @@ func (h *Handler) Media(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
 	type EditSignal struct {
-		RowID  string // Hex
-		Column string
-		Value  string
+		RowID string // Hex
+		Value string
 	}
 
 	s, err := parserequest.As[EditSignal](r)
@@ -185,7 +184,7 @@ func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = DvLogDefinition.UpdateCell(h.db, idBytes, s.Column, s.Value)
+	err = UpdateDvLogComment(h.db, idBytes, s.Value)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

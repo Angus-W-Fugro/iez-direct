@@ -4,7 +4,7 @@
         <input name="page" type="hidden" value="{{.Page}}">
         <input name="numrows" type="hidden" value="{{.NumRows}}">
 
-        <label>
+        <label class="row">
             Sort by
             <select name="sortby">
                 {{range .SortOptions}}
@@ -32,6 +32,7 @@
             {{range $i, $col := .Columns}}
             <th data-col="{{$i}}">{{.Name}}</th>
             {{end}}
+            <th>Comment</th>
             <th></th>
         </tr>
     </thead>
@@ -86,13 +87,22 @@
 
 {{define "dv-log-table-rows"}}
 {{range .Rows}}
+{{$row := .}}
 <tr>
-    <td>{{.Number}}</td>
-    {{range $j, $cell := .Cells}}
+    <td>{{$row.Number}}</td>
+    {{range $j, $cell := $row.Cells}}
     <td data-col="{{$j}}">{{$cell}}</td>
     {{end}}
     <td>
-        <button hx-get="/api/play/{{.ID}}" hx-target="body" hx-swap="beforeend">Play</button>
+        <form class="row" hx-patch="/api/dv-log/edit" hx-encoding="json" hx-target="next .result">
+            <input name="rowid" type="hidden" value="{{$row.ID}}">
+            <textarea cols="40" name="value">{{$row.Comment}}</textarea>
+            <button>Save</button>
+        </form>
+        <div class="result"></div>
+    </td>
+    <td>
+        <button hx-get="/api/play/{{$row.ID}}" hx-target="body" hx-swap="beforeend">Play</button>
     </td>
 </tr>
 {{end}}
