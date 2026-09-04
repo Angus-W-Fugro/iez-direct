@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"embed"
 	"encoding/base64"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -19,6 +20,11 @@ type Handler struct {
 
 func NewHandler() (*Handler, error) {
 	dsn := os.Getenv("MYSQL_CONN")
+
+	if dsn == "" {
+		return nil, fmt.Errorf("no MYSQL_CONN in .env")
+	}
+
 	dsn = dsn + "?parseTime=true"
 
 	db, err := sql.Open("mysql", dsn)
@@ -126,6 +132,8 @@ func (h *Handler) Media(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+
+	log.Println("media:", path)
 
 	http.ServeFile(w, r, path)
 }

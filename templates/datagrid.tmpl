@@ -3,25 +3,41 @@
     <form class="row" hx-get="{{.Endpoint}}" hx-target="#datagrid-rows" hx-trigger="load, change delay:200ms">
         <label>
             Rows
-            <input name="numrows" type="number" value="10" min="10" max="500" required>
+            <input name="numrows" store type="number" value="10" min="10" max="500" required>
         </label>
 
         <label>
             Page
-            <input name="page" type="number" value="1" required min="1">
+            <input name="page" store type="number" value="1" required min="1">
         </label>
 
         <label>
             Filter
-            <input name="filter">
+            <input name="filter" store>
         </label>
 
         <label>
             Sort by
-            <input name="sortby">
+            <input name="sortby" store>
         </label>
     </form>
 </div>
+
+<script>
+    const storeInputs = Array.from(document.querySelectorAll('input[store]'));
+
+    storeInputs.forEach((input) => {
+        const saved = localStorage.getItem(`datagrid:${input.name}`);
+
+        if (saved !== null) {
+            input.value = saved;
+        }
+
+        input.addEventListener('input', () => {
+            localStorage.setItem(`datagrid:${input.name}`, input.value);
+        });
+    });
+</script>
 
 <table id="datagrid-rows"></table>
 {{end}}
