@@ -55,16 +55,24 @@ func GetDvLogs(db *sql.DB, gp *GridParams) ([]DvLog, error) {
 			return nil, err
 		}
 
-		dvLogs = append(dvLogs, DvLog{
+		dvLog := DvLog{
 			ID:           hex.EncodeToString(row.ID),
-			Files:        []string{row.FirstFile, row.LastFile},
+			Files:        []string{row.FirstFile},
 			Workpack:     row.Workpack,
 			Installation: row.Installation,
 			Substructure: row.Substructure,
 			Component:    row.Component,
 			SpreadCode:   row.SpreadCode,
 			Comment:      row.Comment,
-		})
+		}
+
+		if row.LastFile != row.FirstFile {
+			dvLog.Files = append(dvLog.Files, row.LastFile)
+
+			// TODO: use the file suffix to detect if there are *multiple* files
+		}
+
+		dvLogs = append(dvLogs, dvLog)
 	}
 
 	if err := rows.Err(); err != nil {

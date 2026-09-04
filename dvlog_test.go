@@ -24,5 +24,9 @@ func TestGetDvLogs(t *testing.T) {
 		require.NotEmpty(t, dvLog.Component)
 		require.NotEmpty(t, dvLog.SpreadCode)
 		require.NotEmpty(t, dvLog.Comment)
+
+		if len(dvLog.Files) > 1 {
+			require.NotEqual(t, dvLog.Files[0], dvLog.Files[1], "duplicate files detected, LastFile is often an exact match of FirstFile")
+		}
 	}
 }
