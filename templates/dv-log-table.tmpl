@@ -6,7 +6,7 @@
 
         <label class="row">
             Sort by
-            <select name="sortby">
+            <select name="sortby" store>
                 {{range .SortOptions}}
                 <option value="{{.}}">{{.}}</option>
                 {{end}}
@@ -45,6 +45,17 @@
 (function() {
     const STORAGE_KEY = 'dvlog:col-hidden';
     const toggles = document.querySelectorAll('.column-toggle');
+
+    const storeSelect = document.querySelector('select[store]');
+    if (storeSelect) {
+        const saved = localStorage.getItem('dvlog:sortby');
+        if (saved !== null) {
+            storeSelect.value = saved;
+        }
+        storeSelect.addEventListener('change', function() {
+            localStorage.setItem('dvlog:sortby', storeSelect.value);
+        });
+    }
 
     function getHidden() {
         try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
