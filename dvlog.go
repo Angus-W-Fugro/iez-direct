@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -249,9 +248,7 @@ func parseFileSuffix(fileName string) (prefix string, num int, ext string, err e
 	return strings.Join(parts[:len(parts)-1], "_") + "_", num, "." + fileExt, nil
 }
 
-func (v *VideoData) FilePath(idx int) (string, error) {
-	root := os.Getenv("VIDEO_ROOT")
-
+func (v *VideoData) FilePath(root string, idx int) (string, error) {
 	if root == "" {
 		return "", fmt.Errorf("no video root")
 	}

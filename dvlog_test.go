@@ -49,7 +49,7 @@ func TestGetVideoData(t *testing.T) {
 		require.NotEqual(t, data.Files[0], data.Files[1], "duplicate files detected, LastFile is often an exact match of FirstFile")
 	}
 
-	path, err := data.FilePath(0)
+	path, err := data.FilePath("/videos", 0)
 	require.NoError(t, err)
 	require.NotEmpty(t, path)
 }

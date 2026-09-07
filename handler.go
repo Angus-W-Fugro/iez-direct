@@ -16,7 +16,8 @@ import (
 )
 
 type Handler struct {
-	db *sqlx.DB
+	db        *sqlx.DB
+	videoRoot string
 }
 
 func NewHandler() (*Handler, error) {
@@ -34,8 +35,25 @@ func NewHandler() (*Handler, error) {
 		return nil, err
 	}
 
+	videoRoot := os.Getenv("VIDEO_ROOT")
+
+	if videoRoot == "" {
+		return nil, fmt.Errorf("no VIDEO_ROOT in .env")
+	}
+
+	rootInfo, err := os.Stat(videoRoot)
+
+	if err != nil {
+		return nil, fmt.Errorf("video root: %w", err)
+	}
+
+	if !rootInfo.IsDir() {
+		return nil, fmt.Errorf("video root is not a directory: %s", videoRoot)
+	}
+
 	h := &Handler{
-		db,
+		db:        db,
+		videoRoot: videoRoot,
 	}
 
 	return h, nil
@@ -151,7 +169,7 @@ func (h *Handler) Media(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	path, err := data.FilePath(idx)
+	path, err := data.FilePath(h.videoRoot, idx)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
