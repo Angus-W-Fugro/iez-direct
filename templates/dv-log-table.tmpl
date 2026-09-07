@@ -1,0 +1,129 @@
+{{define "dv-log-table"}}
+<div class="row">
+    <form hx-get="/api/dv-logs" hx-target="#dv-log-rows" hx-trigger="change delay:300ms" hx-swap="innerHTML">
+        <input name="page" type="hidden" value="{{.Page}}">
+        <input name="numrows" type="hidden" value="{{.NumRows}}">
+
+        <label class="row">
+            Sort by
+            <select name="sortby" store>
+                {{range .SortOptions}}
+                <option value="{{.}}">{{.}}</option>
+                {{end}}
+            </select>
+        </label>
+    </form>
+
+    <div class="row">
+        Columns:
+        {{range $i, $col := .Columns}}
+        <label>
+            <input type="checkbox" class="column-toggle" data-col="{{$i}}" checked>
+            {{.}}
+        </label>
+        {{end}}
+    </div>
+</div>
+
+<table id="dv-log-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            {{range $i, $col := .Columns}}
+            <th data-col-header="{{$i}}">{{.}}</th>
+            {{end}}
+            <th>Comment</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="dv-log-rows">
+        {{template "dv-log-table-rows" .}}
+    </tbody>
+</table>
+
+<script>
+(function() {
+    const STORAGE_KEY = 'dvlog:col-hidden';
+    const toggles = document.querySelectorAll('.column-toggle');
+
+    const storeSelect = document.querySelector('select[store]');
+    if (storeSelect) {
+        const saved = localStorage.getItem('dvlog:sortby');
+        if (saved !== null) {
+            storeSelect.value = saved;
+        }
+        storeSelect.addEventListener('change', function() {
+            localStorage.setItem('dvlog:sortby', storeSelect.value);
+        });
+    }
+
+    function getHidden() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+        catch { return {}; }
+    }
+
+    function setHidden(hidden) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(hidden));
+    }
+
+    function applyVisibility() {
+        const hidden = getHidden();
+        toggles.forEach(function(cb) {
+            const col = cb.dataset.col;
+            const visible = !(col in hidden);
+            cb.checked = visible;
+            document.querySelectorAll('[data-col-header="' + col + '"], [data-col-cell="' + col + '"]').forEach(function(el) {
+                el.style.display = visible ? '' : 'none';
+            });
+        });
+    }
+
+    toggles.forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            const hidden = getHidden();
+            if (cb.checked) {
+                delete hidden[cb.dataset.col];
+            } else {
+                hidden[cb.dataset.col] = true;
+            }
+            setHidden(hidden);
+            applyVisibility();
+        });
+    });
+
+    applyVisibility();
+
+    document.body.addEventListener('htmx:after:swap', function(e) {
+        applyVisibility();
+    });
+})();
+</script>
+{{end}}
+
+{{define "dv-log-table-rows"}}
+{{range .Rows}}
+{{$row := .}}
+<tr>
+    <td>{{$row.Number}}</td>
+    {{range $j, $cell := $row.Cells}}
+    <td data-col-cell="{{$j}}">{{$cell}}</td>
+    {{end}}
+    <td>
+        <form class="row" hx-patch="/api/dv-log/edit" hx-encoding="json" hx-target="next .result">
+            <input name="rowid" type="hidden" value="{{$row.ID}}">
+            <textarea cols="40" name="value">{{$row.Comment}}</textarea>
+            <button>Save</button>
+        </form>
+        <div class="result"></div>
+    </td>
+    <td>
+        <button hx-get="/api/play/{{$row.ID}}" hx-target="body" hx-swap="beforeend">Play</button>
+    </td>
+</tr>
+{{end}}
+{{if not .Rows}}
+<tr>
+    <td colspan="{{.Colspan}}">No rows returned</td>
+</tr>
+{{end}}
+{{end}}

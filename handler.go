@@ -1,21 +1,22 @@
 package main
 
 import (
-	"database/sql"
 	"embed"
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/Angus-Warman/httpmin/parserequest"
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/Angus-Warman/stf"
+	"github.com/jmoiron/sqlx"
 )
 
 type Handler struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 func NewHandler() (*Handler, error) {
@@ -27,7 +28,7 @@ func NewHandler() (*Handler, error) {
 
 	dsn = dsn + "?parseTime=true"
 
-	db, err := sql.Open("mysql", dsn)
+	db, err := sqlx.Connect("mysql", dsn)
 
 	if err != nil {
 		return nil, err
@@ -49,27 +50,6 @@ func (h *Handler) IndexPage(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/dv-logs", http.StatusSeeOther)
 }
 
-func (h *Handler) Ping(w http.ResponseWriter, r *http.Request) {
-	err := h.db.Ping()
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusServiceUnavailable)
-		return
-	}
-
-	htmlResponse(w, "<span id='response'>ok</span>")
-}
-
-func htmlResponse(w http.ResponseWriter, text string) {
-	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(text))
-}
-
-type DatagridInit struct {
-	Endpoint string
-	Columns  bool
-}
-
 type GridParams struct {
 	NumRows int
 	Page    int
@@ -78,8 +58,24 @@ type GridParams struct {
 }
 
 func (h *Handler) DvLogsPage(w http.ResponseWriter, r *http.Request) {
-	data := DatagridInit{
-		Endpoint: "/api/dv-logs",
+	dvLogs, err := GetDvLogs(h.db, &GridParams{Page: 1, NumRows: 50})
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	sortOptions := []string{}
+	sortOptions = append(sortOptions, stf.Convert(DvLogColumns, func(c string) string { return c + " ASC" })...)
+	sortOptions = append(sortOptions, stf.Convert(DvLogColumns, func(c string) string { return c + " DESC" })...)
+
+	data := DvLogPageData{
+		Rows:        toTableRows(1, dvLogs),
+		Columns:     DvLogColumns,
+		SortOptions: sortOptions,
+		Page:        1,
+		NumRows:     50,
+		Colspan:     len(DvLogColumns) + 3,
 	}
 
 	h.render(w, "dv-logs.tmpl", data)
@@ -93,40 +89,69 @@ func (h *Handler) DvLogsData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	grid, err := h.getDvLogsData(gp)
+	dvLogs, err := GetDvLogs(h.db, &gp)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	gridResponse(w, grid)
-}
+	data := DvLogPageData{
+		Rows:    toTableRows(((gp.Page-1)*gp.NumRows)+1, dvLogs),
+		Colspan: len(DvLogColumns) + 3,
+	}
 
-func (h *Handler) getDvLogsData(gp GridParams) (*Grid, error) {
-	return DvLogDefinition.Grid(h.db, gp)
+	w.Header().Set("Content-Type", "text/html")
+	err = tmpls.ExecuteTemplate(w, "dv-log-table-rows", data)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (h *Handler) Play(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	if _, err := base64.StdEncoding.DecodeString(id); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	h.render(w, "play-modal", id)
-}
-
-func (h *Handler) Media(w http.ResponseWriter, r *http.Request) {
-	id, err := base64.StdEncoding.DecodeString(r.PathValue("id"))
+	idBytes, err := hex.DecodeString(id)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	path, err := DvLogDefinition.VideoPath(h.db, id)
+	data, err := GetVideoData(h.db, idBytes)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	h.render(w, "play-modal", data)
+}
+
+func (h *Handler) Media(w http.ResponseWriter, r *http.Request) {
+	id, err := hex.DecodeString(r.PathValue("logID"))
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	idx, err := strconv.Atoi(r.PathValue("fileIdx"))
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	data, err := GetVideoData(h.db, id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	path, err := data.FilePath(idx)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -140,9 +165,8 @@ func (h *Handler) Media(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
 	type EditSignal struct {
-		RowID  string // Base64
-		Column string
-		Value  string
+		RowID string // Hex
+		Value string
 	}
 
 	s, err := parserequest.As[EditSignal](r)
@@ -152,14 +176,14 @@ func (h *Handler) EditDvLogCell(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idBytes, err := base64.StdEncoding.DecodeString(s.RowID)
+	idBytes, err := hex.DecodeString(s.RowID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = DvLogDefinition.UpdateCell(h.db, idBytes, s.Column, s.Value)
+	err = UpdateDvLogComment(h.db, idBytes, s.Value)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -177,15 +201,6 @@ func (h *Handler) render(w http.ResponseWriter, templateName string, data any) {
 	err := tmpls.ExecuteTemplate(w, templateName, data)
 
 	if err != nil {
-		http.Error(w, err.Error(), 500)
-	}
-}
-
-func gridResponse(w http.ResponseWriter, grid *Grid) {
-	err := tmpls.ExecuteTemplate(w, "datagrid-rows", grid)
-
-	if err != nil {
-		log.Println(err)
 		http.Error(w, err.Error(), 500)
 	}
 }
