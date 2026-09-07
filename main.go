@@ -13,7 +13,9 @@ func main() {
 	err := startServer()
 
 	if err != nil {
-		fmt.Fprint(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, "ERROR:", err)
+		fmt.Println("Press enter to close...")
+		fmt.Scanln()
 	}
 }
 
