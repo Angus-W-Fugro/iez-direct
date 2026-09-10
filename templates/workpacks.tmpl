@@ -19,7 +19,30 @@
 </html>
 
 {{define "workpacks-table"}}
-{{range .Workpacks}}
-<p>{{.Name}}</p>
-{{end}}
+<table>
+    <thead>
+        <tr>
+            <th>Code</th>
+            <th>Assigned prefix</th>
+            <th>Ongoing</th>
+            <th>Total videos</th>
+            <th>Moved videos</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {{range .Workpacks}}
+        <tr>
+            <td>{{.Name}}</td>
+            <td><input type="text" value="{{.AssignedPrefix}}"></td>
+            <td><input type="checkbox"></td>
+            <td>{{.TotalVideos}}</td>
+            <td>{{.MovedVideos}}</td>
+            <td><button>Start transfer</button></td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+
 {{end}}

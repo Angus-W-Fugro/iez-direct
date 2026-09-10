@@ -9,7 +9,11 @@ type WorkpacksPageData struct {
 }
 
 type Workpack struct {
-	Name string `db:"CODE"`
+	Name           string `db:"CODE"`
+	Ongoing        bool
+	AssignedPrefix string
+	TotalVideos    int
+	MovedVideos    int
 }
 
 func (h *Handler) WorkpacksPage(w http.ResponseWriter, r *http.Request) {
