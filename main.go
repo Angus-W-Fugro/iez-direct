@@ -40,6 +40,7 @@ func startServer() error {
 		Route("PATCH /api/dv-log/edit", h.EditDvLogCell).
 		Route("/api/play/{id}", h.Play).
 		Route("/api/media/{logID}/{fileIdx}", h.Media).
+		Route("/workpacks", h.WorkpacksPage).
 		Route("/", h.IndexPage)
 
 	return c.Serve()

@@ -65,7 +65,7 @@ func (h *Handler) IndexPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/dv-logs", http.StatusSeeOther)
+	http.Redirect(w, r, "/workpacks", http.StatusSeeOther)
 }
 
 type GridParams struct {
