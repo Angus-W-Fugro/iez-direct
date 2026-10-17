@@ -1,8 +1,19 @@
 {{define "dv-log-table"}}
 <div class="row">
-    <form hx-get="/api/dv-logs" hx-target="#dv-log-rows" hx-trigger="change delay:300ms" hx-swap="innerHTML">
-        <input name="page" type="hidden" value="{{.Page}}">
-        <input name="numrows" type="hidden" value="{{.NumRows}}">
+    <form class="row" hx-get="/api/dv-logs" hx-target="#dv-log-rows" hx-trigger="change delay:300ms" hx-swap="innerHTML">
+        <label class="row">
+            Page size
+            <select name="numrows" store>
+                <option value="50" selected>50</option>
+                <option value="200">200</option>
+                <option value="9999">9999</option>
+            </select>
+        </label>
+        
+        <label class="row">
+            Page
+            <input name="page" type="number" min="1" value="{{.Page}}">
+        </label>
 
         <label class="row">
             Sort by
@@ -40,6 +51,12 @@
         {{template "dv-log-table-rows" .}}
     </tbody>
 </table>
+
+<div id="dv-log-pagination" class="row" style="justify-content: center; gap: 1rem; margin-top: 1rem;">
+    <button hx-get="/api/dv-logs" hx-target="#dv-log-rows" hx-swap="innerHTML" hx-include="#dv-log-table form [name='sortby'], #dv-log-table form [name='numrows']" hx-vals='{"page": "{{.PrevPage}}"}' {{if le .Page 1}}disabled{{end}}>Previous</button>
+    <span>Page {{.Page}} of {{.TotalPages}}</span>
+    <button hx-get="/api/dv-logs" hx-target="#dv-log-rows" hx-swap="innerHTML" hx-include="#dv-log-table form [name='sortby'], #dv-log-table form [name='numrows']" hx-vals='{"page": "{{.NextPage}}"}' {{if ge .Page .TotalPages}}disabled{{end}}>Next</button>
+</div>
 
 <script>
 (function() {
@@ -96,6 +113,17 @@
     document.body.addEventListener('htmx:after:swap', function(e) {
         applyVisibility();
     });
+
+    const numRowsSelect = document.querySelector('select[name="numrows"][store]');
+    if (numRowsSelect) {
+        const saved = localStorage.getItem('dvlog:numrows');
+        if (saved !== null) {
+            numRowsSelect.value = saved;
+        }
+        numRowsSelect.addEventListener('change', function() {
+            localStorage.setItem('dvlog:numrows', numRowsSelect.value);
+        });
+    }
 })();
 </script>
 {{end}}
